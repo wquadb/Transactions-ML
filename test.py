@@ -64,13 +64,14 @@ class GRUNetwork(nn.Module):
         self.gru = nn.GRU(input_size, hidden_size, batch_first=True)
         self.fc = nn.Linear(hidden_size, output_size)
 
+
     def forward(self, x):
         # x shape: (batch_size, sequence_length, input_size)
         gru_out, _ = self.gru(x)
         # gru_out shape: (batch_size, sequence_length, hidden_size)
 
         # Taking the output from the last time step
-        last_output = gru_out[:, -1]
+        last_output = gru_out[:, -1, :]
 
         output = self.fc(last_output)
         # output shape: (batch_size, output_size)
@@ -95,7 +96,8 @@ dp = DataProcessor()
 print(dp.df[0])
 
 print()
-x = torch.Tensor(dp.df[0])  # Example input data
+x = torch.Tensor([dp.df[0]])  # Example input data
+print(x.shape, "shape")
 
 output = model(x)
 print(output.shape)
