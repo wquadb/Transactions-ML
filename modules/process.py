@@ -25,7 +25,6 @@ def show_correlation(series_1: pd.Series, series_2: pd.Series):
 
     return 0
 
-
 def show_timeseries(df: pd.DataFrame, item: int = 0):
     """
     takes DataFrame with column 'period' and change dates to the number
@@ -47,11 +46,12 @@ def show_timeseries(df: pd.DataFrame, item: int = 0):
     plt.ylabel("item_price", fontsize=14, labelpad=15)
     plt.show()
 
-def string_to_date(df: pd.DataFrame, column: str):
+def string_to_TimeAndHour(df: pd.DataFrame, column: str):
 
     """
     takes DataFrame and column name
-    then converts string dates to datetime64[ns]
+    then converts string dates to datetime64[ns] then to int
+    and creates column 'hour' with hour from localtime
     """
 
     days = df[column].str.split(' ').str[0].astype(int)
@@ -59,5 +59,9 @@ def string_to_date(df: pd.DataFrame, column: str):
     times = pd.to_timedelta(df[column].str.split(' ').str[1])
 
     df[column] = days.apply(pd.Timedelta, unit='d') + times
+
+    df[column] = df[column].dt.total_seconds().astype('int64')
+
+    df['hour'] = times.dt.components['hours'].astype('int64')
 
     return df
