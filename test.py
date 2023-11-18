@@ -1,3 +1,4 @@
+from modules import process as pr
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -35,7 +36,8 @@ def preprocess_data():
     # transform time
     # df_x[['days', 'other_date']] = df_x['trans_time'].str.split(' ', expand=True)
     # df_x[['hours', 'minutes', 'seconds']] = df_x['other_date'].str.split(':', expand=True)
-    df_x.drop(["trans_time", "term_id"], axis=1, inplace=True)
+    df_x.drop(["term_id"], axis=1, inplace=True)
+    df_x = string_to_date(df=df_x, column='trans_time')
 
     # transform trans_city
     df_x = df_one_hot(df_x, 'trans_city')
