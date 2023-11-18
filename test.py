@@ -12,6 +12,25 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.model_selection import train_test_split
 
 from tqdm import tqdm
+import argparse
+import random
+import json
+import os
+
+
+device = torch.device("cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(torch.cuda.is_available())
+print("\nStarting with device:", device)
+
+
+def set_seed(seed: int = 42) -> None:
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.manual_seed(seed)
+    # torch.cuda.manual_seed(seed) cuda seed
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    print(f"Random seed set as {seed}\n")
 
 
 def preprocess_data():
@@ -98,8 +117,8 @@ class DataProcessor:
             d = d.drop(labels=['client_id'], axis=1)
             X_train.append(d.values.tolist())
 
-        X_train = pad_sequence([torch.Tensor(i[::-1]) for i in X_train], batch_first=True).flip(dims=[1])
-        y_train = torch.Tensor(y_train).view(-1, 1)
+        X_train = pad_sequence([torch.Tensor(i[::-1]) for i in X_train], batch_first=True).flip(dims=[1]).to(device)
+        y_train = torch.Tensor(y_train).view(-1, 1).to(device)
 
         print(f"X_Train_shape: {X_train.shape}")
         print(f"X_Train_shape: {y_train.shape}")
@@ -157,7 +176,7 @@ class Worker:
         hidden_size = 28
         output_size = 1
 
-        self.nn = GRUNetwork(input_size, hidden_size, output_size)
+        self.nn = GRUNetwork(input_size, hidden_size, output_size).to(device)
 
         self.train_acc_history = []
         self.test_acc_history = []
@@ -192,7 +211,7 @@ class Worker:
                 optimizer.zero_grad()
 
                 # LOG
-                acc = (y_pred.round() == y).float().mean()
+                acc = (y_pred.round() == y).float().mean().to("cpu")
 
                 self.train_acc_history.append(acc)
                 self.loss_history.append(loss.item())
@@ -270,12 +289,14 @@ class Worker:
 
 
 if __name__ == "__main__":
+    set_seed()
+
     settings = {
         "transactions": "datasets/transactions.csv",
         "train": "datasets/train.csv",
-        "batch_size": 189,
+        "batch_size": 378,
         "learning_rate": 0.001,
-        "num_epochs": 3
+        "num_epochs": 50
     }
 
     worker = Worker(settings=settings)
