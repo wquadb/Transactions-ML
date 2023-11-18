@@ -29,13 +29,6 @@ def preprocess_data():
         df[column] = (df[column] - min_value) / (max_value - min_value)
         return df
 
-    # endregion
-
-    # region ----- generate y table -----
-    df_y = pd.read_csv("datasets/train.csv")
-    df_y.drop(["Unnamed: 0"], axis=1, inplace=True)
-    # endregion
-
     # region ----- generate x table -----
     df_x = pd.read_csv("datasets/transactions.csv")
 
