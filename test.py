@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 
 class DataProcessor:
-    def __init__(self, file_name: str = "datasets/transactions.csv", valid: str = "datasets/train.csv", predict_from: int = 1000):
+    def __init__(self, file_name: str = "datasets/transactions.csv", valid: str = "datasets/train.csv", predict_from: int = 2500):
         self.valid = valid
         self.predict_from = predict_from
         df = self.get_df(file_name)
@@ -46,9 +46,9 @@ class DataProcessor:
                 continue
 
             d = d.drop(labels=['client_id', 'trans_time', 'trans_city', 'term_id'], axis=1)
-            X_train.append(torch.Tensor(d.values.tolist()))
+            X_train.append(d.values.tolist())
 
-        X_train = pad_sequence(X_train, batch_first=True)
+        X_train = pad_sequence([torch.Tensor(i[::-1]) for i in X_train], batch_first=True).flip(dims=[1])
         y_train = torch.Tensor(y_train).view(-1, 1)
 
         print(f"X_Train_shape: {X_train.shape}")
@@ -225,7 +225,7 @@ if __name__ == "__main__":
         "train": "datasets/train.csv",
         "batch_size": 189,
         "learning_rate": 0.001,
-        "num_epochs": 5
+        "num_epochs": 3
     }
 
     worker = Worker(settings=settings)
