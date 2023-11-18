@@ -46,3 +46,18 @@ def show_timeseries(df: pd.DataFrame, item: int = 0):
     plt.xlabel("date", fontsize=14, labelpad=15)
     plt.ylabel("item_price", fontsize=14, labelpad=15)
     plt.show()
+
+def string_to_date(df: pd.DataFrame, column: str):
+
+    """
+    takes DataFrame and column name
+    then converts string dates to datetime64[ns]
+    """
+
+    days = df[column].str.split(' ').str[0].astype(int)
+
+    times = pd.to_timedelta(df[column].str.split(' ').str[1])
+
+    df[column] = days.apply(pd.Timedelta, unit='d') + times
+
+    return df
