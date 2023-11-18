@@ -14,14 +14,64 @@ from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
 
+def preprocess_data():
+    # region ----- functions -----
+    def df_one_hot(df, column):
+        one_hot = pd.get_dummies(df[column], dtype=float)
+        df = df.drop(column, axis=1)
+        df = df.join(one_hot)
+        return df
+
+    # normalizes df values from integer to float(0-1)
+    def df_normalize(df, column):
+        max_value = df[column].max()
+        min_value = df[column].min()
+        df[column] = (df[column] - min_value) / (max_value - min_value)
+        return df
+
+    # endregion
+
+    # region ----- generate y table -----
+    df_y = pd.read_csv("datasets/train.csv")
+    df_y.drop(["Unnamed: 0"], axis=1, inplace=True)
+    # endregion
+
+    # region ----- generate x table -----
+    df_x = pd.read_csv("datasets/transactions.csv")
+
+    # transform time
+    # df_x[['days', 'other_date']] = df_x['trans_time'].str.split(' ', expand=True)
+    # df_x[['hours', 'minutes', 'seconds']] = df_x['other_date'].str.split(':', expand=True)
+    df_x.drop(["trans_time", "term_id"], axis=1, inplace=True)
+
+    # transform trans_city
+    df_x = df_one_hot(df_x, 'trans_city')
+
+    # transform amount
+    df_x = df_x[df_x['amount'] < 4000000]
+    df_x = df_normalize(df_x, 'amount')
+
+    # transform mcc_code
+    df_x['mcc_code'] = df_x['mcc_code'].apply(
+        lambda x: f"mcc_code_{str(x)[:2]}" if str(x)[0] == '5' or str(x)[0] == '7' else f"mcc_code_{str(x)[0]}")
+    df_x = df_one_hot(df_x, 'mcc_code')
+
+    # transform trans_types
+    df_x['trans_type'] = df_x['trans_type'].apply(lambda x: f"trans_type_{str(x)[0]}")
+    df_x = df_one_hot(df_x, 'trans_type')
+
+    return df_x
+
+
 class DataProcessor:
     def __init__(self, file_name: str = "datasets/transactions.csv", valid: str = "datasets/train.csv", predict_from: int = 2500):
         self.valid = valid
         self.predict_from = predict_from
         df = self.get_df(file_name)
+        df = preprocess_data()
+        print(df.columns)
 
         self.X_train, self.y_train = self.get_train_dataset(df)
-
 
     def get_train(self):
         return pd.read_csv(self.valid)
@@ -45,7 +95,7 @@ class DataProcessor:
             else:
                 continue
 
-            d = d.drop(labels=['client_id', 'trans_time', 'trans_city', 'term_id'], axis=1)
+            d = d.drop(labels=['client_id'], axis=1)
             X_train.append(d.values.tolist())
 
         X_train = pad_sequence([torch.Tensor(i[::-1]) for i in X_train], batch_first=True).flip(dims=[1])
@@ -103,7 +153,7 @@ class Worker:
         self.dataset = TensorDataset(self.dataprocessor.X_train, self.dataprocessor.y_train)
 
         # Example usage:
-        input_size = 3
+        input_size = 42
         hidden_size = 28
         output_size = 1
 
